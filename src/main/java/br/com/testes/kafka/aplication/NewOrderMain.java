@@ -1,6 +1,7 @@
 package br.com.testes.kafka.aplication;
 
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.kafka.clients.producer.Callback;
@@ -15,10 +16,9 @@ public class NewOrderMain {
 
 	public static void main(String[] args) throws InterruptedException, ExecutionException {
 		KafkaProducer<String, String> producer = new KafkaProducer<>(properties());
-		String value = "44412323,123,123GGGuuuuu";
-		ProducerRecord<String, String> record = new ProducerRecord<>("ECOMMERCE_NEW_ORDER2", value, value);
-		// producer.send(record).get();
-        producer.send(record, new Callback() {
+        String chave = UUID.randomUUID().toString();
+		String value = chave + ",44412323,123,123GGGuuuuu";
+		Callback callback = new Callback() {
 
 			@Override
 			public void onCompletion(RecordMetadata data, Exception e) {
@@ -27,8 +27,14 @@ public class NewOrderMain {
 				}	
 				System.out.println("#######sucesso enviando " + data.topic() 
 				+ " partition " + data.partition() + " offset " + data.offset());
-		}}).get();
-	}
+		}};
+        ProducerRecord<String, String> record = new ProducerRecord<>("ECOMMERCE_NEW_ORDER", chave, value);
+        producer.send(record, callback).get();
+
+        String email= "Compra realizada com sucesso!!";
+        ProducerRecord<String, String> emailRecord = new ProducerRecord<>("ECOMMERCE_SEND_EMAIL", email, email);
+        producer.send(emailRecord, callback).get();
+    }
 
 	private static Properties properties() {
 		Properties properties = new Properties();
